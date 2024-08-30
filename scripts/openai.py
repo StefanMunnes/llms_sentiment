@@ -20,39 +20,15 @@ with open("data/prompt_sys.txt", "r") as f:
     prompt_sys = f.read()
 
 
-# 3.2 Define the list with fewshot examples
-fewshot_list = []  #  empty list to append for fewshot and empty if zeroshot
+# 3.2 Create list of messages with fewshot examples
+fewshot_list = []
 
 for row in reviews_hc_sample.rows(named=True):
     fewshot_list.append({"role": "user", "content": row["review"]})
     fewshot_list.append({"role": "assistant", "content": str(row["sent_hc"])})
 
-
-# 3.3 Define function to create message
-def create_message(review):
-    """
-    Create a message for the openAI API call.
-
-    This function combines the system prompt and the fewshot examples
-    and adds the review text. The message is a list of dictionaries with
-    "role" and "content" keys.
-
-    Args:
-        review (str): The review text to be evaluated.
-
-    Returns:
-        list: The message to be sent to the openAI API.
-    """
-
-    global prompt_sys
-    global fewshot_list
-
-    # create the first system message, add fewhot examples & add final review
-    message = [{"role": "system", "content": prompt_sys}]
-    message.extend(fewshot_list)
-    message.append({"role": "user", "content": review})
-
-    return message
+message = [{"role": "system", "content": prompt_sys}]
+message.extend(fewshot_list)
 
 
 # 4. Connect to openAI API and run function to rate sentiment
@@ -118,9 +94,9 @@ for row_rev in reviews_hc.rows(named=True):
 
     print(row_rev["rev_id"])
 
-    message = create_message(row_rev["review"])
+    message_loop = message + [{"role": "user", "content": row_rev["review"]}]
 
-    sentiment_results = sentiment_analysis(message)
+    sentiment_results = sentiment_analysis(message_loop)
 
     sentiment_results = sentiment_results.assign(rev_id=row_rev["rev_id"])
 
